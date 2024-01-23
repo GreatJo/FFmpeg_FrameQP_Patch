@@ -1,0 +1,51 @@
+diff --git a/libavcodec/h264dec.c b/libavcodec/h264dec.c
+index f346c65b20..e4e211e990 100644
+--- a/libavcodec/h264dec.c
++++ b/libavcodec/h264dec.c
+@@ -974,7 +974,21 @@ static int finalize_frame(H264Context *h, AVFrame *dst, H264Picture *out, int *g
+                                  out->mb_width, out->mb_height, out->mb_stride, 1);
+         }
+     }
+-
++    int max_qp = 0;
++    int min_qp = 52;
++    int sum_qp = 0;
++    int qp_cnt = 0;
++    int x, y;
++    for (y = 0; y < out->mb_height; y++) {
++        for (x = 0; x < out->mb_width; x++) {
++            int8_t mb_qp = out->qscale_table[x + y * out->mb_stride];
++            sum_qp += mb_qp;
++            max_qp = max_qp > mb_qp ? max_qp : mb_qp;
++            min_qp = min_qp < mb_qp ? min_qp : mb_qp;
++            qp_cnt++;
++        }
++    }
++    printf("avg_qp:%d max_qp:%d min_qp:%d qp_cnt:%d\n", (int)(sum_qp * 1.0 / qp_cnt), max_qp, min_qp, qp_cnt);
+     return 0;
+ }
+ 
+diff --git a/libavcodec/hevcdec.c b/libavcodec/hevcdec.c
+index b267f6ebcf..c21a66ef43 100644
+--- a/libavcodec/hevcdec.c
++++ b/libavcodec/hevcdec.c
+@@ -2938,6 +2938,19 @@ static int hevc_frame_end(HEVCContext *s)
+         av_assert1(ret >= 0);
+     }
+ 
++    int max_qp = 0;
++    int min_qp = 52;
++    int sum_qp = 0; 
++    int qp_cnt = s->ps.sps->min_cb_height * s->ps.sps->min_cb_width;
++    for(int i = 0; i < qp_cnt; i++) {
++        int8_t cb_qp = s->qp_y_tab[i];
++        sum_qp += cb_qp;
++        max_qp = max_qp > cb_qp ? max_qp : cb_qp;
++        min_qp = min_qp < cb_qp ? min_qp : cb_qp;
++    }
++
++    printf("avg_qp:%d max_qp:%d min_qp:%d qp_cnt:%d\n", (int)(sum_qp * 1.0 / qp_cnt), max_qp, min_qp, qp_cnt);
++
+     return 0;
+ }
+ 
